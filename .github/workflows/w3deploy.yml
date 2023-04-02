@@ -1,0 +1,48 @@
+# Nom de notre workflow
+name: "Build and deploy Github pages"
+
+# Événements sur lesquels il doit être déclenché
+on:
+  workflow_dispatch:
+  push:         # <- Déclenché lorsque l'on pousse du code...
+    branches:
+      - vue-step-5  # <- ... mais seulement sur cette branche
+
+jobs:
+
+  # Notre job
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    # Tâches à effectuer, comme expliquées ci-dessus
+    steps:
+
+      # 1. On récupère le contenu du dépôt
+      - name: "Checkout"
+        uses: actions/checkout@v3
+        with:
+          ref: vue-step-5
+          persist-credentials: false
+  
+      - name: "Set up Node"
+        uses: actions/setup-node@v3
+        with:
+          node-version: lts/gallium
+
+      - name: "Build yarn"
+        run: |
+          yarn
+          yarn build
+          
+      - name: "Expose dist directory"
+        run: |
+          sed -i 's/\/dist/#\/dist/g' .gitignore
+          cat .gitignore
+          
+      # 3. Déploiement sur les Github Pages
+      - name: "Deploy Github Pages"
+        uses: JamesIves/github-pages-deploy-action@v4.4.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: deploy     # <- Branche sur laquelle seront commités les fichiers
+          FOLDER: dist/  # <- Dossier contenant notre documentation générée
